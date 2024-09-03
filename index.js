@@ -14,22 +14,6 @@ mongoose
     console.error("Failed to connect to MongoDB", err);
   });
 
-const testEmail = async () => {
-  try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: "pykulytskyi.oleh@gmail.com",
-      subject: "Test Email",
-      text: "This is a test email.",
-    });
-    console.log("Test email sent successfully");
-  } catch (error) {
-    console.log("Error sending test email:", error);
-  }
-};
-
-testEmail();
-
 const app = express();
 const port = process.env.PORT;
 

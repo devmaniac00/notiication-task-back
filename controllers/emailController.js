@@ -30,32 +30,11 @@ const sendEmail = async (req, res) => {
     return res.status(500).send("Failed to save data to database.");
   }
 
-  const daysOfWeek = {
-    sunday: 0,
-    monday: 1,
-    tuesday: 2,
-    wednesday: 3,
-    thursday: 4,
-    friday: 5,
-    saturday: 6,
-  };
-
-  const dayOfWeek = daysOfWeek[weeklyNotificationDay.toLowerCase()];
-  if (dayOfWeek === undefined) {
-    return res.status(400).send("Invalid day of the week.");
-  }
-
-  const [hours, minutes] = notificationTime.split(":").map(Number);
-
-  const scheduleJob = (notificationDate) => {
-    console.log("notificationDate", notificationDate);
-    schedule.scheduleJob(notificationDate, async () => {
-      console.log("Will send?");
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Notification",
-        text: `
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Notification",
+    text: `
           Hello!
 
           This is ${candidateName}. You've requested notifications about ${searchQuery}.
@@ -63,70 +42,50 @@ const sendEmail = async (req, res) => {
           Have a great day,
 
           ${candidateName}`,
-      };
-      console.log("email was sended");
+  };
 
-      try {
-        await transporter.sendMail(mailOptions);
+  const [hours, minutes] = notificationTime.split(":").map(Number);
 
-        const updatedNotification = await Notification.findById(
-          notification._id
-        );
-        if (updatedNotification.sendCount < updatedNotification.maxSends) {
-          updatedNotification.sendCount += 1;
-          await updatedNotification.save();
-
-          planNextSend(updatedNotification);
+  try {
+    if (notificationInterval === "daily") {
+      schedule.scheduleJob({ hour: hours, minute: minutes }, async () => {
+        try {
+          await transporter.sendMail(mailOptions);
+          console.log("Email was sent (Daily).");
+        } catch (error) {
+          console.log("Error occurred while sending daily email:", error);
         }
-      } catch (error) {
-        console.log("Error occurred:", error);
-      }
-    });
-  };
-
-  const planNextSend = (notification) => {
-    const now = new Date();
-    let nextSendDate;
-
-    switch (notification.notificationInterval) {
-      case "daily":
-        nextSendDate = new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate() + 1,
-          hours,
-          minutes
-        );
-        break;
-      case "weekly":
-        nextSendDate = new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate() + ((dayOfWeek + 7 - now.getDay()) % 7),
-          hours,
-          minutes
-        );
-        break;
-      case "monthly":
-        nextSendDate = new Date(
-          now.getFullYear(),
-          now.getMonth() + 1,
-          now.getDate(),
-          hours,
-          minutes
-        );
-        break;
-      default:
-        console.log("Invalid notification interval.");
-        return;
+      });
+    } else if (notificationInterval === "weekly") {
+      schedule.scheduleJob(
+        { dayOfWeek: weeklyNotificationDay, hour: hours, minute: minutes },
+        async () => {
+          try {
+            await transporter.sendMail(mailOptions);
+            console.log("Email was sent (Weekly).");
+          } catch (error) {
+            console.log("Error occurred while sending weekly email:", error);
+          }
+        }
+      );
+    } else if (notificationInterval === "monthly") {
+      schedule.scheduleJob(
+        { date: 1, hour: hours, minute: minutes },
+        async () => {
+          try {
+            await transporter.sendMail(mailOptions);
+            console.log("Email was sent (Monthly).");
+          } catch (error) {
+            console.log("Error occurred while sending monthly email:", error);
+          }
+        }
+      );
     }
-
-    scheduleJob(nextSendDate);
-  };
-
-  planNextSend(notification);
-
-  res.send("Email scheduling initiated.");
+    res.status(200).send("Notification scheduled successfully.");
+  } catch (error) {
+    console.log("Error occurred while scheduling email:", error);
+    res.status(500).send("Failed to schedule email.");
+  }
 };
 
 module.exports = sendEmail;
