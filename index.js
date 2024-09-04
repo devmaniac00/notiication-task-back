@@ -1,8 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const emailRouter = require("./routers/emailRoutes");
-const transporter = require("./config/nodemailerConfig");
-
+const cors = require("cors");
 const mongoose = require("mongoose");
 
 mongoose
@@ -17,6 +16,7 @@ mongoose
 const app = express();
 const port = process.env.PORT;
 
+app.use(cors());
 app.use(bodyParser.json());
 app.use("/api", emailRouter);
 
