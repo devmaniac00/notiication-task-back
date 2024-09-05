@@ -13,14 +13,14 @@ mongoose
     console.error("Failed to connect to MongoDB", err);
   });
 
+const app = express();
+const port = process.env.PORT;
+
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   next();
 });
 app.use(cors());
-
-const app = express();
-const port = process.env.PORT;
 
 app.use(bodyParser.json());
 app.use("/api", emailRouter);
