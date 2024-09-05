@@ -13,10 +13,16 @@ mongoose
     console.error("Failed to connect to MongoDB", err);
   });
 
+const corsOptions = {
+  origin: ["https://notification-task-seven.vercel.app/"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+};
+
 const app = express();
 const port = process.env.PORT;
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use("/api", emailRouter);
 
