@@ -22,6 +22,8 @@ const corsOptions = {
 const app = express();
 const port = process.env.PORT;
 
+console.log("add cors");
+
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use("/api", emailRouter);
